@@ -62,7 +62,9 @@ async def serve(q: Q):
                     name="box_category",
                     label="Group by Category (optional)",
                     inline=True,
+                    value="none",
                     choices=[
+                        ui.choice("none", "No Category"),
                         ui.choice("age", "Age"),
                         ui.choice("state", "State"),
                         ui.choice("year", "Year"),
@@ -84,7 +86,10 @@ async def serve(q: Q):
 
     # Boxplot
     if q.args.choose_box_category:
-        q.page["box"].content = plot_boxplot(q, x=q.args.box_category)
+
+        q.page["box"].content = plot_boxplot(
+            q, x=q.args.box_category if q.args.box_category != "none" else None
+        )
 
     await q.page.save()
 
