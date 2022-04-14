@@ -98,7 +98,7 @@ def preprocess_df(df):
 
 def plot_usa_map(q, statistic):
 
-    match statistic.lower():
+    match statistic:
         case "median":
             rate_by_state = q.app.rates.groupby("state").median().rate
         case "max":
