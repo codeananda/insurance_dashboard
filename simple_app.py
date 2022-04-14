@@ -50,31 +50,41 @@ async def serve(q: Q):
             ],
         )
         q.page["map"] = ui.frame_card(
-            box="1 2 4 5", title="", content=plot_usa_map(q, map_initial_value)
+            box="1 2 4 5",
+            title="",
+            content=plot_usa_map(q, map_initial_value),
         )
-        q.page["box"] = ui.frame_card(box="5 1 4 5", title="", content="")
+
+        q.page["input_box"] = ui.form_card(
+            box="5 1 4 2",
+            items=[
+                ui.choice_group(
+                    name="box_category",
+                    label="Group by Category (optional)",
+                    inline=True,
+                    choices=[
+                        ui.choice("age", "Age"),
+                        ui.choice("state", "State"),
+                        ui.choice("year", "Year"),
+                    ],
+                ),
+                ui.button(name="choose_box_category", label="Submit", primary=True),
+            ],
+        )
+
+        q.page["box"] = ui.frame_card(
+            box="5 3 4 5",
+            title="",
+            content=plot_boxplot(q),
+        )
 
     # Map
-    # median_rate_by_state = q.app.rates.groupby("state").median().rate
-
-    # fig_map = px.choropleth(
-    #     # rate_by_state,
-    #     locationmode="USA-states",
-    #     locations=median_rate_by_state.index,
-    #     scope="usa",
-    #     color=median_rate_by_state,
-    #     color_continuous_scale="reds",
-    #     title="Median Rate by State",
-    # )
-    # fig_map.layout.coloraxis.colorbar.title = "Rate ($)"
-    # html_map = pio.to_html(fig_map, validate=False, include_plotlyjs="cdn")
     if q.args.aggregate_statistic:
         q.page["map"].content = plot_usa_map(q, q.args.aggregate_statistic)
 
     # Boxplot
-    fig_box = px.box(q.app.rates, y="rate")
-    html_box = pio.to_html(fig_box, validate=False, include_plotlyjs="cdn")
-    q.page["box"].content = html_box
+    if q.args.choose_box_category:
+        q.page["box"].content = plot_boxplot(q, x=q.args.box_category)
 
     await q.page.save()
 
@@ -94,6 +104,12 @@ def preprocess_df(df):
     age_full = age_full[age_full.rate < 9999]
 
     return age_full
+
+
+def plot_boxplot(q, x=None):
+    fig = px.box(q.app.rates, y="rate", x=x)
+    html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
+    return html
 
 
 def plot_usa_map(q, statistic):
@@ -125,3 +141,114 @@ def plot_usa_map(q, statistic):
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
 
     return html
+
+
+# choices = [
+#     ui.choice("A", "Option A"),
+#     ui.choice("B", "Option B"),
+#     ui.choice("C", "Option C", disabled=True),
+#     ui.choice("D", "Option D"),
+# ]
+
+
+# @app("/demo")
+# async def serve(q: Q):
+#     if q.args.show_inputs:
+#         q.page["example"].items = [
+#             ui.text(f"selected={q.args.choice_group}"),
+#             ui.button(name="show_form", label="Back", primary=True),
+#         ]
+#     else:
+#         q.page["example"] = ui.form_card(
+#             box="1 1 4 10",
+#             items=[
+#                 ui.choice_group(
+#                     name="choice_group",
+#                     label="Pick one",
+#                     value="B",
+#                     required=True,
+#                     choices=choices,
+#                 ),
+#                 ui.button(name="show_inputs", label="Submit", primary=True),
+#             ],
+#         )
+#     await q.page.save()
+
+
+# @app("/button")
+# async def serve(q: Q):
+#     if "basic_button" in q.args:
+#         q.page["example"].items = [
+#             ui.text(f"basic_button={q.args.basic_button}"),
+#             ui.text(f"primary_button={q.args.primary_button}"),
+#             ui.text(f"link_button={q.args.link_button}"),
+#             ui.text(f"basic_disabled_button={q.args.basic_disabled_button}"),
+#             ui.text(f"primary_disabled_button={q.args.primary_disabled_button}"),
+#             ui.text(f"link_disabled_button={q.args.link_disabled_button}"),
+#             ui.text(f"basic_caption_button={q.args.basic_caption_button}"),
+#             ui.text(f"primary_caption_button={q.args.primary_caption_button}"),
+#             ui.text(
+#                 f"basic_caption_disabled_button={q.args.basic_caption_disabled_button}"
+#             ),
+#             ui.text(
+#                 f"primary_caption_disabled_button={q.args.primary_caption_disabled_button}"
+#             ),
+#             ui.text(f"button_with_icon={q.args.button_with_icon}"),
+#             ui.text(f"icon_button={q.args.icon_button}"),
+#             ui.button(name="show_form", label="Back", primary=True),
+#         ]
+#     else:
+#         q.page["example"] = ui.form_card(
+#             box="1 1 4 10",
+#             items=[
+#                 ui.button(name="basic_button", label="Basic"),
+#                 ui.button(name="primary_button", label="Primary", primary=True),
+#                 ui.button(name="link_button", label="Link", link=True),
+#                 ui.button(
+#                     name="basic_disabled_button",
+#                     label="Basic (Disabled)",
+#                     disabled=True,
+#                 ),
+#                 ui.button(
+#                     name="primary_disabled_button",
+#                     label="Primary (Disabled)",
+#                     primary=True,
+#                     disabled=True,
+#                 ),
+#                 ui.button(
+#                     name="link_disabled_button",
+#                     label="Link (Disabled)",
+#                     link=True,
+#                     disabled=True,
+#                 ),
+#                 ui.button(
+#                     name="basic_caption_button",
+#                     label="Basic",
+#                     caption="Caption Button.",
+#                 ),
+#                 ui.button(
+#                     name="primary_caption_button",
+#                     label="Primary",
+#                     caption="Caption Button",
+#                     primary=True,
+#                 ),
+#                 ui.button(
+#                     name="basic_caption_disabled_button",
+#                     label="Basic (Disabled)",
+#                     caption="Caption Button",
+#                     disabled=True,
+#                 ),
+#                 ui.button(
+#                     name="primary_caption_disabled_button",
+#                     label="Primary (Disabled)",
+#                     caption="Caption Button",
+#                     primary=True,
+#                     disabled=True,
+#                 ),
+#                 ui.button(
+#                     name="button_with_icon", label="Button with an icon", icon="Search"
+#                 ),
+#                 ui.button(name="icon_button", icon="Heart", caption="Tooltip text"),
+#             ],
+#         )
+#     await q.page.save()
