@@ -98,9 +98,9 @@ def preprocess_df(df):
     age_cols = ["BusinessYear", "StateCode", "Age", "IndividualRate"]
     age_full = df.loc[:, age_cols]
     age_full.columns = ["year", "state", "age", "rate"]
-    age_full = age_full[age_full.age != "Family Option"]
 
     # Turn all values in age column to ints
+    age_full = age_full[age_full.age != "Family Option"]
     age_full["age"] = age_full.age.str.replace("0-20", "20")
     age_full["age"] = age_full.age.str.replace("65 and over", "65")
     age_full["age"] = pd.to_numeric(age_full.age)
