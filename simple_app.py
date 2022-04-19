@@ -49,7 +49,7 @@ async def serve(q: Q):
             ],
         )
         q.page["hist"] = ui.frame_card(
-            box="1 2 5 4",
+            box="1 2 5 5",
             title="",
             content=plot_histograms(q, hist_initial_value),
         )
@@ -74,14 +74,14 @@ async def serve(q: Q):
         )
 
         q.page["box"] = ui.frame_card(
-            box="6 2 4 4",
+            box="6 2 4 5",
             title="",
             content=plot_boxplot(q, x=box_initial_value),
         )
 
         map_initial_value = "median"
         q.page["input_map"] = ui.form_card(
-            box="6 6 4 2",
+            box="6 7 4 2",
             items=[
                 ui.dropdown(
                     name="choice_map",
@@ -99,14 +99,14 @@ async def serve(q: Q):
             ],
         )
         q.page["map"] = ui.frame_card(
-            box="6 7 4 5",
+            box="6 8 4 5",
             title="",
             content=plot_usa_map(q, map_initial_value),
         )
 
         line_initial_value = "age"
         q.page["input_line"] = ui.form_card(
-            box="1 6 5 2",
+            box="1 7 5 2",
             items=[
                 ui.dropdown(
                     name="choice_line",
@@ -122,7 +122,7 @@ async def serve(q: Q):
             ],
         )
         q.page["line"] = ui.frame_card(
-            box="1 7 5 5",
+            box="1 8 5 5",
             title="",
             content=plot_mean_and_median_lines(q, line_initial_value),
         )
@@ -165,9 +165,19 @@ def preprocess_df(df):
 def plot_boxplot(q, x="none"):
     if x == "none":
         x = None
+
     if x == "state":
         return plot_boxplot_state(q)
-    fig = px.box(q.app.rates, y="rate", x=x)
+
+    title = f"Distribution of Rate"
+    if x is not None:
+        title += f" Grouped by {x.title()}"
+    fig = px.box(
+        q.app.rates,
+        y="rate",
+        x=x,
+        title=title,
+    )
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
 
@@ -177,7 +187,14 @@ def plot_boxplot_state(q):
     sorted_state_count = q.app.rates.groupby("state").median().sort_values("rate")
     ordering = sorted_state_count.index
 
-    fig = px.box(q.app.rates, y="rate", x="state", category_orders={"state": ordering})
+    title = "Distribution of Rate Grouped by State"
+    fig = px.box(
+        q.app.rates,
+        y="rate",
+        x="state",
+        category_orders={"state": ordering},
+        title=title,
+    )
 
     fig.update_layout(
         xaxis={
@@ -205,8 +222,8 @@ def plot_usa_map(q, statistic):
         case "std":
             rate_by_state = q.app.rates.groupby("state").std().rate
 
-    # title = f"{statistic.title()} Rate" if statistic != "std" else "Standard Deviation"
-    # title = title + " by State"
+    title = f"{statistic.title()} Rate" if statistic != "std" else "Standard Deviation"
+    title = title + " by State"
     fig = px.choropleth(
         # rate_by_state,
         locationmode="USA-states",
@@ -214,7 +231,7 @@ def plot_usa_map(q, statistic):
         scope="usa",
         color=rate_by_state,
         color_continuous_scale="reds",
-        # title=title,
+        title=title,
     )
     fig.layout.coloraxis.colorbar.title = "Rate ($)"
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
@@ -235,24 +252,28 @@ def plot_histograms(q, column):
 
 
 def plot_hist_rate(q):
-    fig = px.histogram(q.app.rates, x="rate", log_y=True)
+    title = "Count Histogram of Rate"
+    fig = px.histogram(q.app.rates, x="rate", log_y=True, title=title)
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
 
 
 def plot_hist_age(q):
-    fig = px.histogram(q.app.rates, x="age")
+    title = "Count Histogram of Age"
+    fig = px.histogram(q.app.rates, x="age", title=title)
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
 
 
 def plot_hist_year(q):
+    title = "Count Histogram of Year"
     year_count = q.app.rates.groupby("year").count()
     fig = px.histogram(
         year_count,
         x=["2014", "2015", "2016"],
         y="state",
         labels=dict(state="year", x="year"),
+        title=title,
     )
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
@@ -262,7 +283,10 @@ def plot_hist_state(q):
     sorted_state_count = q.app.rates.groupby("state").count().sort_values("rate")
     ordering = sorted_state_count.index
 
-    fig = px.histogram(q.app.rates, x="state", category_orders={"state": ordering})
+    title = "Count Histogram of State"
+    fig = px.histogram(
+        q.app.rates, x="state", category_orders={"state": ordering}, title=title
+    )
 
     fig.update_layout(
         xaxis={
