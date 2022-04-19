@@ -74,39 +74,39 @@ async def serve(q: Q):
         )
 
         q.page["box"] = ui.frame_card(
-            box="6 2 4 5",
+            box="6 2 4 4",
             title="",
             content=plot_boxplot(q, x=box_initial_value),
         )
 
-        # map_initial_value = "median"
-        # q.page["input_map"] = ui.form_card(
-        #     box="1 13 4 2",
-        #     items=[
-        #         ui.dropdown(
-        #             name="aggregate_statistic",
-        #             label="Choose aggregate statistic",
-        #             value=map_initial_value,  # set default value
-        #             trigger=True,
-        #             choices=[
-        #                 ui.choice(name="median", label="Median"),
-        #                 ui.choice(name="mean", label="Mean"),
-        #                 ui.choice(name="min", label="Minimum"),
-        #                 ui.choice(name="max", label="Maximum"),
-        #                 ui.choice(name="std", label="Standard Deviation"),
-        #             ],
-        #         ),
-        #     ],
-        # )
-        # q.page["map"] = ui.frame_card(
-        #     box="1 14 4 5",
-        #     title="",
-        #     content=plot_usa_map(q, map_initial_value),
-        # )
+        map_initial_value = "median"
+        q.page["input_map"] = ui.form_card(
+            box="6 6 4 2",
+            items=[
+                ui.dropdown(
+                    name="choice_map",
+                    label="Map: Choose aggregate statistic",
+                    value=map_initial_value,
+                    trigger=True,
+                    choices=[
+                        ui.choice(name="median", label="Median"),
+                        ui.choice(name="mean", label="Mean"),
+                        ui.choice(name="min", label="Minimum"),
+                        ui.choice(name="max", label="Maximum"),
+                        ui.choice(name="std", label="Standard Deviation"),
+                    ],
+                ),
+            ],
+        )
+        q.page["map"] = ui.frame_card(
+            box="6 7 4 5",
+            title="",
+            content=plot_usa_map(q, map_initial_value),
+        )
 
-    # # Map
-    # if q.args.aggregate_statistic:
-    #     q.page["map"].content = plot_usa_map(q, q.args.aggregate_statistic)
+    # Map
+    if q.args.choice_map:
+        q.page["map"].content = plot_usa_map(q, q.args.choice_map)
 
     # Histogram
     if q.args.choice_hist:
@@ -179,8 +179,8 @@ def plot_usa_map(q, statistic):
         case "std":
             rate_by_state = q.app.rates.groupby("state").std().rate
 
-    title = f"{statistic.title()} Rate" if statistic != "std" else "Standard Deviation"
-    title = title + " by State"
+    # title = f"{statistic.title()} Rate" if statistic != "std" else "Standard Deviation"
+    # title = title + " by State"
     fig = px.choropleth(
         # rate_by_state,
         locationmode="USA-states",
@@ -188,7 +188,7 @@ def plot_usa_map(q, statistic):
         scope="usa",
         color=rate_by_state,
         color_continuous_scale="reds",
-        title=title,
+        # title=title,
     )
     fig.layout.coloraxis.colorbar.title = "Rate ($)"
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
