@@ -60,7 +60,7 @@ async def serve(q: Q):
             items=[
                 ui.dropdown(
                     name="choice_box",
-                    label="Boxplot: Choose variable for x-axis (optional)",
+                    label="Boxplot: Choose variable for x-axis",
                     value=box_initial_value,
                     trigger=True,
                     choices=[
@@ -104,6 +104,29 @@ async def serve(q: Q):
             content=plot_usa_map(q, map_initial_value),
         )
 
+        line_initial_value = "age"
+        q.page["input_line"] = ui.form_card(
+            box="1 6 5 2",
+            items=[
+                ui.dropdown(
+                    name="choice_line",
+                    label="Line: Choose variable to plot",
+                    value=line_initial_value,
+                    trigger=True,
+                    choices=[
+                        ui.choice(name="age", label="Age"),
+                        ui.choice(name="state", label="State"),
+                        ui.choice(name="year", label="Year"),
+                    ],
+                )
+            ],
+        )
+        q.page["line"] = ui.frame_card(
+            box="1 7 5 5",
+            title="",
+            content=plot_mean_and_median_lines(q, line_initial_value),
+        )
+
     # Map
     if q.args.choice_map:
         q.page["map"].content = plot_usa_map(q, q.args.choice_map)
@@ -115,6 +138,9 @@ async def serve(q: Q):
     # Boxplot
     if q.args.choice_box:
         q.page["box"].content = plot_boxplot(q, x=q.args.choice_box)
+
+    if q.args.choice_line:
+        q.page["line"].content = plot_mean_and_median_lines(q, q.args.choice_line)
 
     await q.page.save()
 
@@ -245,5 +271,44 @@ def plot_hist_state(q):
             "ticktext": ordering,
         }
     )
+    html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
+    return html
+
+
+# Plot mean and median rate for a column
+def plot_mean_and_median_lines(q, column):
+
+    median = q.app.rates.groupby(column).median().rate
+    mean = q.app.rates.groupby(column).mean().rate
+
+    # Sort by median for state
+    if column == "state":
+        median = median.sort_values()
+        ordering = median.index
+        mean = mean.loc[ordering]
+
+    input_data = {
+        "median": median,
+        "mean": mean,
+    }
+
+    df_plot = pd.DataFrame(data=input_data)
+
+    fig = px.line(
+        df_plot,
+        labels={"value": "rate"},
+        title=f"Mean and Median Rate by {column.title()}",
+    )
+    if column == "state":
+        fig.update_layout(
+            xaxis={
+                "tickvals": list(range(len(q.app.rates[column].unique()))),
+                "ticktext": ordering,
+            }
+        )
+    elif column == "year":
+        fig.update_layout(xaxis={"tickvals": [2014, 2015, 2016]})
+    else:
+        pass
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
