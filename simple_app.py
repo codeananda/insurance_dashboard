@@ -30,9 +30,25 @@ async def serve(q: Q):
         times_df_loaded += 1
         print(f"Dataframe loaded {times_df_loaded} times in total")
 
+        q.page["hist_rate"] = ui.frame_card(
+            box="1 1 4 3", title="", content=plot_hist_rate(q)
+        )
+
+        q.page["hist_year"] = ui.frame_card(
+            box="1 4 4 3", title="", content=plot_hist_year(q)
+        )
+
+        q.page["hist_age"] = ui.frame_card(
+            box="1 7 4 3", title="", content=plot_hist_age(q)
+        )
+
+        q.page["hist_state"] = ui.frame_card(
+            box="1 10 4 3", title="", content=plot_hist_state(q)
+        )
+
         map_initial_value = "median"
         q.page["input_map"] = ui.form_card(
-            box="1 1 4 2",
+            box="1 13 4 2",
             items=[
                 ui.dropdown(
                     name="aggregate_statistic",
@@ -50,7 +66,7 @@ async def serve(q: Q):
             ],
         )
         q.page["map"] = ui.frame_card(
-            box="1 2 4 5",
+            box="1 14 4 5",
             title="",
             content=plot_usa_map(q, map_initial_value),
         )
@@ -145,4 +161,45 @@ def plot_usa_map(q, statistic):
     fig.layout.coloraxis.colorbar.title = "Rate ($)"
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
 
+    return html
+
+
+def plot_hist_rate(q):
+    fig = px.histogram(q.app.rates, x="rate", log_y=True)
+    html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
+    return html
+
+
+def plot_hist_age(q):
+    fig = px.histogram(q.app.rates, x="age")
+    html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
+    return html
+
+
+def plot_hist_year(q):
+    year_count = q.app.rates.groupby("year").count()
+    fig = px.histogram(
+        year_count,
+        x=["2014", "2015", "2016"],
+        y="state",
+        labels=dict(state="year", x="year"),
+    )
+    html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
+    return html
+
+
+def plot_hist_state(q):
+    sorted_state_count = q.app.rates.groupby("state").count().sort_values("year")
+    ordering = sorted_state_count.index
+
+    fig = px.histogram(q.app.rates, x="state", category_orders={"state": ordering})
+
+    fig.update_layout(
+        xaxis={
+            "tickmode": "array",
+            "tickvals": list(range(len(ordering))),
+            "ticktext": ordering,
+        }
+    )
+    html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
