@@ -1,17 +1,11 @@
 from h2o_wave import main, app, Q, ui
 
-from time import time
-import os
-
 import pandas as pd
 import numpy as np
 import plotly.express as px
 from plotly import io as pio
-from plotly import graph_objects as go
 
-from loguru import logger
-
-os.environ["H2O_WAVE_NO_LOG"] = "1"
+from time import time
 
 
 @app("/insurance")
