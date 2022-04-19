@@ -30,82 +30,91 @@ async def serve(q: Q):
         times_df_loaded += 1
         print(f"Dataframe loaded {times_df_loaded} times in total")
 
-        q.page["hist_rate"] = ui.frame_card(
-            box="1 1 4 3", title="", content=plot_hist_rate(q)
-        )
-
-        q.page["hist_year"] = ui.frame_card(
-            box="1 4 4 3", title="", content=plot_hist_year(q)
-        )
-
-        q.page["hist_age"] = ui.frame_card(
-            box="1 7 4 3", title="", content=plot_hist_age(q)
-        )
-
-        q.page["hist_state"] = ui.frame_card(
-            box="1 10 4 3", title="", content=plot_hist_state(q)
-        )
-
-        map_initial_value = "median"
-        q.page["input_map"] = ui.form_card(
-            box="1 13 4 2",
+        hist_initial_value = "rate"
+        q.page["input_hist"] = ui.form_card(
+            box="1 1 5 2",
             items=[
                 ui.dropdown(
-                    name="aggregate_statistic",
-                    label="Choose aggregate statistic",
-                    value=map_initial_value,  # set default value
+                    name="choice_hist",
+                    label="Histogram: Choose variable to plot",
+                    value=hist_initial_value,
                     trigger=True,
                     choices=[
-                        ui.choice(name="median", label="Median"),
-                        ui.choice(name="mean", label="Mean"),
-                        ui.choice(name="min", label="Minimum"),
-                        ui.choice(name="max", label="Maximum"),
-                        ui.choice(name="std", label="Standard Deviation"),
+                        ui.choice(name="rate", label="Rate"),
+                        ui.choice(name="year", label="Year"),
+                        ui.choice(name="age", label="Age"),
+                        ui.choice(name="state", label="State"),
                     ],
-                ),
+                )
             ],
         )
-        q.page["map"] = ui.frame_card(
-            box="1 14 4 5",
+        q.page["hist"] = ui.frame_card(
+            box="1 2 5 4",
             title="",
-            content=plot_usa_map(q, map_initial_value),
+            content=plot_histograms(q, hist_initial_value),
         )
 
+        box_initial_value = "none"
         q.page["input_box"] = ui.form_card(
-            box="5 1 4 2",
+            box="6 1 4 2",
             items=[
-                ui.choice_group(
-                    name="box_category",
-                    label="Group by Category (optional)",
-                    inline=True,
-                    value="none",
+                ui.dropdown(
+                    name="choice_box",
+                    label="Boxplot: Choose variable for x-axis (optional)",
+                    value=box_initial_value,
+                    trigger=True,
                     choices=[
-                        ui.choice("none", "No Category"),
+                        ui.choice("none", "None"),
                         ui.choice("age", "Age"),
-                        ui.choice("state", "State"),
+                        ui.choice("state", "State (ordered by median)"),
                         ui.choice("year", "Year"),
                     ],
-                ),
-                ui.button(name="choose_box_category", label="Submit", primary=True),
+                )
             ],
         )
 
         q.page["box"] = ui.frame_card(
-            box="5 3 4 5",
+            box="6 2 4 5",
             title="",
-            content=plot_boxplot(q),
+            content=plot_boxplot(q, x=box_initial_value),
         )
 
-    # Map
-    if q.args.aggregate_statistic:
-        q.page["map"].content = plot_usa_map(q, q.args.aggregate_statistic)
+        # map_initial_value = "median"
+        # q.page["input_map"] = ui.form_card(
+        #     box="1 13 4 2",
+        #     items=[
+        #         ui.dropdown(
+        #             name="aggregate_statistic",
+        #             label="Choose aggregate statistic",
+        #             value=map_initial_value,  # set default value
+        #             trigger=True,
+        #             choices=[
+        #                 ui.choice(name="median", label="Median"),
+        #                 ui.choice(name="mean", label="Mean"),
+        #                 ui.choice(name="min", label="Minimum"),
+        #                 ui.choice(name="max", label="Maximum"),
+        #                 ui.choice(name="std", label="Standard Deviation"),
+        #             ],
+        #         ),
+        #     ],
+        # )
+        # q.page["map"] = ui.frame_card(
+        #     box="1 14 4 5",
+        #     title="",
+        #     content=plot_usa_map(q, map_initial_value),
+        # )
+
+    # # Map
+    # if q.args.aggregate_statistic:
+    #     q.page["map"].content = plot_usa_map(q, q.args.aggregate_statistic)
+
+    # Histogram
+    if q.args.choice_hist:
+        q.page["hist"].content = plot_histograms(q, q.args.choice_hist)
 
     # Boxplot
-    if q.args.choose_box_category:
-
-        q.page["box"].content = plot_boxplot(
-            q, x=q.args.box_category if q.args.box_category != "none" else None
-        )
+    if q.args.choice_box:
+        q.page["box"].content = plot_boxplot(q, x=q.args.choice_box)
 
     await q.page.save()
 
@@ -127,8 +136,31 @@ def preprocess_df(df):
     return age_full
 
 
-def plot_boxplot(q, x=None):
+def plot_boxplot(q, x="none"):
+    if x == "none":
+        x = None
+    if x == "state":
+        return plot_boxplot_state(q)
     fig = px.box(q.app.rates, y="rate", x=x)
+    html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
+    return html
+
+
+def plot_boxplot_state(q):
+    # Order by median
+    sorted_state_count = q.app.rates.groupby("state").median().sort_values("rate")
+    ordering = sorted_state_count.index
+
+    fig = px.box(q.app.rates, y="rate", x="state", category_orders={"state": ordering})
+
+    fig.update_layout(
+        xaxis={
+            "tickmode": "array",
+            "tickvals": list(range(len(ordering))),
+            "ticktext": ordering,
+            "tickfont_size": 9,
+        }
+    )
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
 
@@ -164,6 +196,18 @@ def plot_usa_map(q, statistic):
     return html
 
 
+def plot_histograms(q, column):
+    match column:
+        case "rate":
+            return plot_hist_rate(q)
+        case "age":
+            return plot_hist_age(q)
+        case "state":
+            return plot_hist_state(q)
+        case "year":
+            return plot_hist_year(q)
+
+
 def plot_hist_rate(q):
     fig = px.histogram(q.app.rates, x="rate", log_y=True)
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
@@ -189,7 +233,7 @@ def plot_hist_year(q):
 
 
 def plot_hist_state(q):
-    sorted_state_count = q.app.rates.groupby("state").count().sort_values("year")
+    sorted_state_count = q.app.rates.groupby("state").count().sort_values("rate")
     ordering = sorted_state_count.index
 
     fig = px.histogram(q.app.rates, x="state", category_orders={"state": ordering})
