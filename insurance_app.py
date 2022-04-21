@@ -113,18 +113,19 @@ async def serve(q: Q):
             content=plot_mean_and_median_lines(q, line_initial_value),
         )
 
-    # Map
+    # Update Map
     if q.args.choice_map:
         q.page["map"].content = plot_usa_map(q, q.args.choice_map)
 
-    # Histogram
+    # Update Histogram
     if q.args.choice_hist:
         q.page["hist"].content = plot_histograms(q, q.args.choice_hist)
 
-    # Boxplot
+    # Update Boxplot
     if q.args.choice_box:
         q.page["box"].content = plot_boxplot(q, x=q.args.choice_box)
 
+    # Update Line
     if q.args.choice_line:
         q.page["line"].content = plot_mean_and_median_lines(q, q.args.choice_line)
 
