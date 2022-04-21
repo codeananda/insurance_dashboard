@@ -15,14 +15,11 @@ async def serve(q: Q):
         q.client.initialized = True
         # Load dataframe
         start = time()
-        rates = pd.read_csv("data/rate_sample.csv", nrows=100000)
         # One dataframe per app as per this answer
         # https://github.com/h2oai/wave/discussions/1342#discussioncomment-2550120
-        q.app.rates = preprocess_df(rates)
+        q.app.rates = pd.read_csv("rate_sample_preprocessed_200k.csv")
         end = time()
         print(f"It took {end - start:.2f}s to load df")
-        times_df_loaded += 1
-        print(f"Dataframe loaded {times_df_loaded} times in total")
 
         hist_initial_value = "rate"
         q.page["input_hist"] = ui.form_card(
@@ -140,20 +137,20 @@ async def serve(q: Q):
 
 
 def preprocess_df(df):
-    age_cols = ["BusinessYear", "StateCode", "Age", "IndividualRate"]
-    age_full = df.loc[:, age_cols]
-    age_full.columns = ["year", "state", "age", "rate"]
+    cols_we_want = ["BusinessYear", "StateCode", "Age", "IndividualRate"]
+    df = df.loc[:, cols_we_want]
+    df.columns = ["year", "state", "age", "rate"]
 
     # Turn all values in age column to ints
-    age_full = age_full[age_full.age != "Family Option"]
-    age_full["age"] = age_full.age.str.replace("0-20", "20")
-    age_full["age"] = age_full.age.str.replace("65 and over", "65")
-    age_full["age"] = pd.to_numeric(age_full.age)
+    df = df[df.age != "Family Option"]
+    df["age"] = df.age.str.replace("0-20", "20")
+    df["age"] = df.age.str.replace("65 and over", "65")
+    df["age"] = pd.to_numeric(df.age)
 
     # Drop all outlier plans
-    age_full = age_full[age_full.rate < 9999]
+    df = df[df.rate < 9999]
 
-    return age_full
+    return df
 
 
 def plot_boxplot(q, x="none"):
