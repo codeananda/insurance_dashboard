@@ -14,15 +14,10 @@ async def serve(q: Q):
     if not q.client.initialized:
         q.client.initialized = True
         # Load dataframe
-        start = time()
-        # One dataframe per app as per this answer
-        # https://github.com/h2oai/wave/discussions/1342#discussioncomment-2550120
-        q.app.rates = pd.read_csv("rate_sample_preprocessed_200k.csv")
-        end = time()
-        print(f"It took {end - start:.2f}s to load df")
+        q.app.rates = pd.read_csv("data/rate_sample_preprocessed_200k.csv")
 
         hist_initial_value = "rate"
-        q.page["input_hist"] = ui.form_card(
+        q.page["dropdown_hist"] = ui.form_card(
             box="1 1 5 2",
             items=[
                 ui.dropdown(
@@ -46,7 +41,7 @@ async def serve(q: Q):
         )
 
         box_initial_value = "none"
-        q.page["input_box"] = ui.form_card(
+        q.page["dropdown_box"] = ui.form_card(
             box="6 1 4 2",
             items=[
                 ui.dropdown(
@@ -71,7 +66,7 @@ async def serve(q: Q):
         )
 
         map_initial_value = "median"
-        q.page["input_map"] = ui.form_card(
+        q.page["dropdown_map"] = ui.form_card(
             box="6 7 4 2",
             items=[
                 ui.dropdown(
@@ -96,7 +91,7 @@ async def serve(q: Q):
         )
 
         line_initial_value = "age"
-        q.page["input_line"] = ui.form_card(
+        q.page["dropdown_line"] = ui.form_card(
             box="1 7 5 2",
             items=[
                 ui.dropdown(
