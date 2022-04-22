@@ -5,12 +5,11 @@ import numpy as np
 import plotly.express as px
 from plotly import io as pio
 
-from time import time
+MARGIN = dict(l=0, r=0, t=30, b=0)
 
 
 @app("/insurance")
 async def serve(q: Q):
-    times_df_loaded = 0
     if not q.client.initialized:
         q.client.initialized = True
         # Load dataframe
@@ -165,6 +164,7 @@ def plot_boxplot(q, x="none"):
         x=x,
         title=title,
     )
+    fig.update_layout(margin=MARGIN)
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
 
@@ -184,12 +184,13 @@ def plot_boxplot_state(q):
     )
 
     fig.update_layout(
+        margin=MARGIN,
         xaxis={
             "tickmode": "array",
             "tickvals": list(range(len(ordering))),
             "ticktext": ordering,
             "tickfont_size": 9,
-        }
+        },
     )
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
@@ -220,6 +221,7 @@ def plot_usa_map(q, statistic):
         color_continuous_scale="reds",
         title=title,
     )
+    fig.update_layout(margin=MARGIN)
     fig.layout.coloraxis.colorbar.title = "Rate ($)"
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
 
@@ -241,6 +243,7 @@ def plot_histograms(q, column):
 def plot_hist_rate(q):
     title = "Count Histogram of Rate"
     fig = px.histogram(q.app.rates, x="rate", log_y=True, title=title)
+    fig.update_layout(margin=MARGIN)
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
 
@@ -248,6 +251,7 @@ def plot_hist_rate(q):
 def plot_hist_age(q):
     title = "Count Histogram of Age"
     fig = px.histogram(q.app.rates, x="age", title=title)
+    fig.update_layout(margin=MARGIN)
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
 
@@ -262,6 +266,7 @@ def plot_hist_year(q):
         labels=dict(state="year", x="year"),
         title=title,
     )
+    fig.update_layout(margin=MARGIN)
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
 
@@ -276,11 +281,12 @@ def plot_hist_state(q):
     )
 
     fig.update_layout(
+        margin=MARGIN,
         xaxis={
             "tickmode": "array",
             "tickvals": list(range(len(ordering))),
             "ticktext": ordering,
-        }
+        },
     )
     html = pio.to_html(fig, validate=False, include_plotlyjs="cdn")
     return html
@@ -310,6 +316,7 @@ def plot_mean_and_median_lines(q, column):
         labels={"value": "rate"},
         title=f"Mean and Median Rate by {column.title()}",
     )
+    fig.update_layout(margin=MARGIN)
     if column == "state":
         fig.update_layout(
             xaxis={
