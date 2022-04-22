@@ -34,14 +34,14 @@ async def serve(q: Q):
             ],
         )
         q.page["hist"] = ui.frame_card(
-            box="1 2 5 5",
+            box="1 2 5 4",
             title="",
             content=plot_histograms(q, hist_initial_value),
         )
 
         box_initial_value = "none"
         q.page["dropdown_box"] = ui.form_card(
-            box="6 1 4 2",
+            box="6 1 5 2",
             items=[
                 ui.dropdown(
                     name="choice_box",
@@ -59,14 +59,14 @@ async def serve(q: Q):
         )
 
         q.page["box"] = ui.frame_card(
-            box="6 2 4 5",
+            box="6 2 5 4",
             title="",
             content=plot_boxplot(q, x=box_initial_value),
         )
 
         map_initial_value = "median"
         q.page["dropdown_map"] = ui.form_card(
-            box="6 7 4 2",
+            box="6 6 5 2",
             items=[
                 ui.dropdown(
                     name="choice_map",
@@ -84,14 +84,14 @@ async def serve(q: Q):
             ],
         )
         q.page["map"] = ui.frame_card(
-            box="6 8 4 5",
+            box="6 7 5 5",
             title="",
             content=plot_usa_map(q, map_initial_value),
         )
 
         line_initial_value = "age"
         q.page["dropdown_line"] = ui.form_card(
-            box="1 7 5 2",
+            box="1 6 5 2",
             items=[
                 ui.dropdown(
                     name="choice_line",
@@ -107,7 +107,7 @@ async def serve(q: Q):
             ],
         )
         q.page["line"] = ui.frame_card(
-            box="1 8 5 5",
+            box="1 7 5 5",
             title="",
             content=plot_mean_and_median_lines(q, line_initial_value),
         )
