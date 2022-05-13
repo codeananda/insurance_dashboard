@@ -15,6 +15,24 @@ async def serve(q: Q):
         # Load dataframe
         q.app.rates = pd.read_csv("data/rate_sample_preprocessed_200k.csv")
 
+        ### Code from last article ###
+
+        # Add boxplot cards
+        q.page["dropdown_box"] = ui.form_card()
+        q.page["box"] = ui.frame_card()
+
+    ### Code from last article ###
+
+    await q.page.save()
+
+
+@app("/insurance_full")
+async def serve(q: Q):
+    if not q.client.initialized:
+        q.client.initialized = True
+        # Load dataframe
+        q.app.rates = pd.read_csv("data/rate_sample_preprocessed_200k.csv")
+
         hist_initial_value = "rate"
         q.page["dropdown_hist"] = ui.form_card(
             box="1 1 5 2",
@@ -61,7 +79,7 @@ async def serve(q: Q):
         q.page["box"] = ui.frame_card(
             box="6 2 5 4",
             title="",
-            content=plot_boxplot(q, x=box_initial_value),
+            content=plot_boxplots(q, x=box_initial_value),
         )
 
         map_initial_value = "median"
@@ -122,7 +140,7 @@ async def serve(q: Q):
 
     # Update Boxplot
     if q.args.choice_box:
-        q.page["box"].content = plot_boxplot(q, x=q.args.choice_box)
+        q.page["box"].content = plot_boxplots(q, x=q.args.choice_box)
 
     # Update Line
     if q.args.choice_line:
@@ -148,20 +166,18 @@ def preprocess_df(df):
     return df
 
 
-def plot_boxplot(q, x="none"):
-    if x == "none":
-        x = None
-
+def plot_boxplots(q, x="none"):
     if x == "state":
         return plot_boxplot_state(q)
 
     title = f"Distribution of Rate"
-    if x is not None:
+    if x != "none":
         title += f" Grouped by {x.title()}"
+
     fig = px.box(
         q.app.rates,
         y="rate",
-        x=x,
+        x=x if x != "none" else None,
         title=title,
     )
     fig.update_layout(margin=MARGIN)
@@ -170,25 +186,23 @@ def plot_boxplot(q, x="none"):
 
 
 def plot_boxplot_state(q):
-    # Order by median
-    sorted_state_count = q.app.rates.groupby("state").median().sort_values("rate")
-    ordering = sorted_state_count.index
+    # In ascending median order
+    median_ordering = q.app.rates.groupby("state").median().rate.sort_values().index
 
     title = "Distribution of Rate Grouped by State"
     fig = px.box(
         q.app.rates,
         y="rate",
         x="state",
-        category_orders={"state": ordering},
+        category_orders={"state": median_ordering},
         title=title,
     )
 
     fig.update_layout(
         margin=MARGIN,
         xaxis={
-            "tickmode": "array",
-            "tickvals": list(range(len(ordering))),
-            "ticktext": ordering,
+            "tickvals": list(range(len(median_ordering))),
+            "ticktext": median_ordering,
             "tickfont_size": 9,
         },
     )
