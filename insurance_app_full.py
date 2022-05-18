@@ -1,4 +1,4 @@
-from h2o_wave import main, app, Q, ui
+from h2o_wave import main, app, Q, ui, on, handle_on
 
 import pandas as pd
 import numpy as np
@@ -83,24 +83,18 @@ async def serve(q: Q):
         )
 
         map_initial_value = "median"
-        q.page["dropdown_map"] = ui.form_card(
-            box="6 6 5 2",
+        q.page["tab_map"] = ui.tab_card(
+            box="6 6 5 1",
             items=[
-                ui.dropdown(
-                    name="choice_map",
-                    label="Map: Choose aggregate statistic",
-                    value=map_initial_value,
-                    trigger=True,
-                    choices=[
-                        ui.choice(name="median", label="Median"),
-                        ui.choice(name="mean", label="Mean"),
-                        ui.choice(name="min", label="Minimum"),
-                        ui.choice(name="max", label="Maximum"),
-                        ui.choice(name="std", label="Standard Deviation"),
-                    ],
-                ),
+                ui.tab(name="#map/median", label="Median"),
+                ui.tab(name="#map/mean", label="Mean"),
+                ui.tab(name="#map/min", label="Minimum"),
+                ui.tab(name="#map/max", label="Maximum"),
+                ui.tab(name="#map/std", label="Standard Deviation"),
             ],
+            value=map_initial_value,
         )
+
         q.page["map"] = ui.frame_card(
             box="6 7 5 5",
             title="",
@@ -108,31 +102,19 @@ async def serve(q: Q):
         )
 
         line_initial_value = "age"
-        q.page["dropdown_line"] = ui.form_card(
-            box="1 6 5 2",
-            items=[
-                ui.dropdown(
-                    name="choice_line",
-                    label="Line: Choose variable to plot",
-                    value=line_initial_value,
-                    trigger=True,
-                    choices=[
-                        ui.choice(name="age", label="Age"),
-                        ui.choice(name="state", label="State"),
-                        ui.choice(name="year", label="Year"),
-                    ],
-                )
-            ],
+        q.page["routing_line"] = ui.markdown_card(
+            box="1 6 5 1",
+            title="Line: Choose variable to plot",
+            content="[Age](#line/age) / [State](#line/state) / [Year](#line/year)",
         )
+
         q.page["line"] = ui.frame_card(
             box="1 7 5 5",
             title="",
             content=plot_mean_and_median_lines(q, line_initial_value),
         )
 
-    # Update Map
-    if q.args.choice_map:
-        q.page["map"].content = plot_usa_map(q, q.args.choice_map)
+        await q.page.save()
 
     # Update Histogram
     if q.args.choice_hist:
@@ -142,10 +124,22 @@ async def serve(q: Q):
     if q.args.choice_box:
         q.page["box"].content = plot_boxplots(q, x=q.args.choice_box)
 
-    # Update Line
-    if q.args.choice_line:
-        q.page["line"].content = plot_mean_and_median_lines(q, q.args.choice_line)
+    await handle_on(q)
 
+
+# This function is called when q.args['#'] is 'line/age', 'line/state', or 'line/year'.
+# The 'variable' placeholder's value is passed as an argument to the function.
+# Note how this changes the URL and thus why we want to prefix it with where we are
+# you can also pass these custom URLs like APIs if there are multiple hash selector elements
+@on(arg="#line/{variable}")
+async def handle_line(q: Q, variable: str):
+    q.page["line"].content = plot_mean_and_median_lines(q, variable)
+    await q.page.save()
+
+
+@on(arg="#map/{statistic}")
+async def handle_map(q: Q, statistic: str):
+    q.page["map"].content = plot_usa_map(q, statistic)
     await q.page.save()
 
 
